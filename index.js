@@ -37,6 +37,7 @@ window.onload = function() {
     loadImages();
     // Appelle la fonction qui génère le niveau à partir d'une matrice ou d'un fichier de données
     loadMap();
+    update();
     // Affiche dans la console le nombre d'éléments stockés dans les collections respectives
     // Utile pour vérifier que tous les objets ont bien été instanciés après le chargement de la carte
     console.log(walls.size);    // Affiche le nombre total de murs (souvent un Set ou une Map)
@@ -166,9 +167,31 @@ function update() {
     //setInterval, setTimeout,
     
 }
-
+/**
+ * Fonction responsable du rendu graphique du jeu.
+ * Elle est appelée à chaque itération de la boucle update pour redessiner l'écran.
+ */
 function draw() {
+    // 1. DESSINER PAC-MAN
+    // On dessine l'image actuelle de Pac-Man à ses coordonnées (x, y)
     context.drawImage(pacman.image, pacman.x, pacman.y, pacman.width, pacman.height);
+    // 2. DESSINER LES FANTÔMES
+    // On parcourt l'ensemble 'ghosts' pour afficher chaque fantôme
+    for (let ghost of ghosts) {
+        context.drawImage(ghost.image, ghost.x, ghost.y, ghost.width, ghost.height);
+    }
+    // 3. DESSINER LES MURS
+    // On parcourt l'ensemble 'walls' pour construire la structure du labyrinthe
+    for (let wall of walls) {
+        context.drawImage(wall.image, wall.x, wall.y, wall.width, wall.height);
+    }
+    // 4. DESSINER LA NOURRITURE
+    // On définit la couleur du "pinceau" sur blanc pour les pastilles
+    context.fillStyle = "white";
+    for (let food of foods) {
+        // Comme les pastilles n'ont pas d'image, on dessine des petits rectangles pleins
+        context.fillRect(food.x, food.y, food.width, food.height);
+    }
 }
 
 /**
@@ -186,5 +209,47 @@ class Block {
         // le jeu (reset) sans recharger la page
         this.startX = x;
         this.startY = y;
+        // Définit l'orientation actuelle du personnage.
+        // 'R' (Right) pour Droite, 'L' (Left) pour Gauche, 'U' (Up) pour Haut, 'D' (Down) pour Bas.
+        // Utile pour choisir la bonne image à afficher (ex: Pac-Man qui regarde à droite).
+        this.direction = 'R'; // Direction initiale (R = droite, L = gauche, U = haut, D = bas)
+        // Détermine la vitesse et la direction sur l'axe horizontal (X).
+        // Une valeur positive (ex: 2) déplace vers la droite, négative vers la gauche.
+        this.velocityX = 0; 
+        // Détermine la vitesse et la direction sur l'axe vertical (Y).
+        // Une valeur positive déplace vers le bas, négative vers le haut.
+        this.velocityY = 0; 
+    }
+
+    /**
+     * Met à jour la direction du personnage et recalcule immédiatement sa vitesse.
+     * @param {string} direction - Nouvelle direction ('U', 'D', 'L', 'R').
+     */
+    updateDirection(direction) {
+        this.direction = direction;     // Enregistre la nouvelle direction choisie
+        this.updateVelocity();          // Met à jour les vecteurs de mouvement X et Y
+    }
+    /**
+     * Traduit la direction textuelle en valeurs numériques de vitesse (Velocity).
+     * On utilise 'tileSize / 4' pour que la vitesse soit proportionnelle à la taille des cases.
+     */
+    updateVelocity() {
+        if (this.direction == 'U') {     // UP (HAUT)
+            this.velocityX = 0;
+            this.velocityY = -tileSize / 4; // Valeur négative pour monter vers le haut du canvas
+        } else if (this.direction == 'D') {     // DOWN (BAS)
+            this.velocityX = 0;
+            this.velocityY = tileSize / 4; // Valeur positive pour descendre 
+        }
+        else if (this.direction == 'L') {   // LEFT (GAUCHE)
+            this.velocityX = -tileSize / 4; // Valeur négative pour aller vers la gauche
+            this.velocityY = 0;
+        } else if (this.direction == 'R') {  // RIGHT (DROITE)
+            this.velocityX = tileSize / 4;  // Valeur positive pour aller vers la droite
+            this.velocityY = 0;
+            //n'oubliez pas dansun canvas HTML l'origine (0,0) est en haut à gauche
+            //donc l'axe Y est orienté vers le bas positif donc le haut negatif
+            //et donc pour aller a droite c'est positif et a gauche c'est negatif 
+        }
     }
 }

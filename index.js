@@ -35,6 +35,13 @@ window.onload = function() {
     context = board.getContext("2d");
     // Appel de la fonction pour charger toutes les ressources graphiques
     loadImages();
+    // Appelle la fonction qui génère le niveau à partir d'une matrice ou d'un fichier de données
+    loadMap();
+    // Affiche dans la console le nombre d'éléments stockés dans les collections respectives
+    // Utile pour vérifier que tous les objets ont bien été instanciés après le chargement de la carte
+    console.log(walls.size);    // Affiche le nombre total de murs (souvent un Set ou une Map)
+    console.log(foods.size);    // Affiche le nombre de gommes/pastilles à manger
+    console.log(ghosts.size);   // Affiche le nombre de fantômes créés
 }
 //X = wall, O = skip, P = pac man, ' ' = food
 //Ghosts: b = blue, o = orange, p = pink, r = red
@@ -98,15 +105,20 @@ function loadImages() {
 }
 
 function loadMap(){
+    // 1. RÉINITIALISATION : On vide les anciennes données pour éviter les doublons
+    // si on recharge le niveau ou si on change de niveau.
     walls.clear();
     foods.clear();
     ghosts.clear();
-
+    // 2. PARCOURS DE LA GRILLE : On utilise une double boucle (Lignes/Colonnes)
+    // pour lire chaque case de la matrice 'tileMap'.
     for (let r = 0; r < rowCount; r++) {
         for (let c = 0; c < colCount; c++) {
+            // Récupère le caractère à la position actuelle (ex: '1', '0', 'P')
             const row = tileMap[r];
             const tileMapChar = row[c];
-
+            // 3. CONVERSION EN COORDONNÉES PIXELS :
+            // On transforme l'index (ligne/colonne) en position réelle sur l'écran.
             const x = c * tileSize;
             const y = r * tileSize;
 
@@ -136,7 +148,7 @@ function loadMap(){
                 ghosts.add(ghost);
             }
             else if (tileMapChar == 'P') {
-                // Créer un Pac-Mans
+                // Créer un Pac-Man 
                 pacman = new Block(pacmanrightImage, x, y, tileSize, tileSize);
             }
             else if (tileMapChar === ' ') {

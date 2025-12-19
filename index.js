@@ -83,25 +83,25 @@ let pacman;
 function loadImages() {
     // Chargement de l'image des murs
     wallImage = new Image();
-    wallImage.src = "image-Pacman-project/wall.png";
+    wallImage.src = "./image/wall.png";
     // Chargement des images des fantômes
     blueGhostImage = new Image();
-    blueGhostImage.src = "image-Pacman-project/blueGhost.png";
+    blueGhostImage.src = "./image/blueGhost.png";
     orangeGhostImage = new Image();
-    orangeGhostImage.src = "image-Pacman-project/orangeGhost.png";
+    orangeGhostImage.src = "./image/orangeGhost.png";
     pinkGhostImage = new Image();
-    pinkGhostImage.src = "image-Pacman-project/pinkGhost.png";
+    pinkGhostImage.src = "./image/pinkGhost.png";
     redGhostImage = new Image();
-    redGhostImage.src = "image-Pacman-project/redGhost.png";
+    redGhostImage.src = "./image/redGhost.png";
     // Chargement des images de Pac-Man selon sa direction
     pacmanupImage = new Image();
-    pacmanupImage.src = "image-Pacman-project/pacmanUp.png";
+    pacmanupImage.src = "./image/pacmanUp.png";
     pacmandownImage = new Image();
-    pacmandownImage.src = "image-Pacman-project/pacmanDown.png";
+    pacmandownImage.src = "./image/pacmanDown.png";
     pacmanleftImage = new Image();
-    pacmanleftImage.src = "image-Pacman-project/pacmanLeft.png";
+    pacmanleftImage.src = "./image/pacmanLeft.png";
     pacmanrightImage = new Image();
-    pacmanrightImage.src = "image-Pacman-project/pacmanRight.png";
+    pacmanrightImage.src = "./image/pacmanRight.png";
 }
 
 function loadMap(){
@@ -158,6 +158,17 @@ function loadMap(){
             }
         }
     }
+}
+
+function update() {
+    draw();
+    setTimeout(update, 50); //20fps 1 -> 1000/20 = 50ms
+    //setInterval, setTimeout,
+    
+}
+
+function draw() {
+    context.drawImage(pacman.image, pacman.x, pacman.y, pacman.width, pacman.height);
 }
 
 /**

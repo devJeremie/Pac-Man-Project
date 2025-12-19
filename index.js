@@ -37,7 +37,11 @@ window.onload = function() {
     loadImages();
     // Appelle la fonction qui génère le niveau à partir d'une matrice ou d'un fichier de données
     loadMap();
+    // Démarre la boucle principale du jeu
     update();
+    // Ajoute un écouteur d'événements pour capturer les touches du clavier
+    this.document.addEventListener("keyup", movePacman);
+
     // Affiche dans la console le nombre d'éléments stockés dans les collections respectives
     // Utile pour vérifier que tous les objets ont bien été instanciés après le chargement de la carte
     console.log(walls.size);    // Affiche le nombre total de murs (souvent un Set ou une Map)
@@ -192,6 +196,30 @@ function draw() {
         // Comme les pastilles n'ont pas d'image, on dessine des petits rectangles pleins
         context.fillRect(food.x, food.y, food.width, food.height);
     }
+}
+/**
+ * Intercepte les pressions de touches au clavier pour diriger Pac-Man.
+ * Supporte à la fois les touches directionnelles et les touches ZQSD (ou WASD).
+ * @param {KeyboardEvent} event - L'événement clavier envoyé par le navigateur.
+ */
+function movePacman(event) {
+    // Vérifie si la touche pressée est 'Flèche Haut' ou la touche 'W' (Haut en mode WASD)
+    if (event.code === "ArrowUp" || event.code === "KeyW") {
+        pacman.updateDirection('U');    // Oriente Pac-Man vers le HAUT
+    }
+    // Vérifie si la touche pressée est 'Flèche Bas' ou la touche 'S' (Bas)
+    else if (event.code === "ArrowDown" || event.code === "KeyS") {
+        pacman.updateDirection('D');    // Oriente Pac-Man vers le BAS
+    }
+    // Vérifie si la touche pressée est 'Flèche Gauche' ou la touche 'A' (Gauche)
+    else if (event.code === "ArrowLeft" || event.code === "KeyA") {
+        pacman.updateDirection('L');    // Oriente Pac-Man vers la GAUCHE
+    }
+    // Vérifie si la touche pressée est 'Flèche Droite' ou la touche 'D' (Droite)
+    else if (event.code === "ArrowRight" || event.code === "KeyD") {
+        pacman.updateDirection('R');    // Oriente Pac-Man vers la DROITE
+    }
+
 }
 
 /**

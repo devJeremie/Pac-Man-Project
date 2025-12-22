@@ -23,31 +23,6 @@ let pacmanrightImage;
 // Image pour les murs du labyrinthe
 let wallImage;
 
-// --- INITIALISATION DU JEU ---
-// Cette fonction s'exécute automatiquement quand la page Web a fini de charger
-window.onload = function() {
-    // On récupère l'élément Canvas par son ID "board"
-    board = document.getElementById("board");
-    // On définit les dimensions physiques du canvas
-    board.width = boardWidth;
-    board.height = boardHeight;
-    // On initialise le contexte de dessin en 2D
-    context = board.getContext("2d");
-    // Appel de la fonction pour charger toutes les ressources graphiques
-    loadImages();
-    // Appelle la fonction qui génère le niveau à partir d'une matrice ou d'un fichier de données
-    loadMap();
-    // Démarre la boucle principale du jeu
-    update();
-    // Ajoute un écouteur d'événements pour capturer les touches du clavier
-    this.document.addEventListener("keyup", movePacman);
-
-    // Affiche dans la console le nombre d'éléments stockés dans les collections respectives
-    // Utile pour vérifier que tous les objets ont bien été instanciés après le chargement de la carte
-    console.log(walls.size);    // Affiche le nombre total de murs (souvent un Set ou une Map)
-    console.log(foods.size);    // Affiche le nombre de gommes/pastilles à manger
-    console.log(ghosts.size);   // Affiche le nombre de fantômes créés
-}
 //X = wall, O = skip, P = pac man, ' ' = food
 //Ghosts: b = blue, o = orange, p = pink, r = red
 const tileMap = [
@@ -82,6 +57,44 @@ const foods = new Set();
 const ghosts = new Set();
 // Variable qui contiendra l'objet unique représentant Pac-Man
 let pacman;
+
+const directions = ['U', 'D', 'L', 'R']; // Up, Down, Left, Right]
+
+// --- INITIALISATION DU JEU ---
+// Cette fonction s'exécute automatiquement quand la page Web a fini de charger
+window.onload = function() {
+    // On récupère l'élément Canvas par son ID "board"
+    board = document.getElementById("board");
+    // On définit les dimensions physiques du canvas
+    board.width = boardWidth;
+    board.height = boardHeight;
+    // On initialise le contexte de dessin en 2D
+    context = board.getContext("2d");
+    // Appel de la fonction pour charger toutes les ressources graphiques
+    loadImages();
+    // Appelle la fonction qui génère le niveau à partir d'une matrice ou d'un fichier de données
+    loadMap();
+    // Affiche dans la console le nombre d'éléments stockés dans les collections respectives
+    // Utile pour vérifier que tous les objets ont bien été instanciés après le chargement de la carte
+    console.log(walls.size);    // Affiche le nombre total de murs (souvent un Set ou une Map)
+    console.log(foods.size);    // Affiche le nombre de gommes/pastilles à manger
+    console.log(ghosts.size);   // Affiche le nombre de fantômes créés
+    // On parcourt l'ensemble des fantômes pour modifier leur comportement un par un
+    for (let ghost of ghosts.values()) {
+        // On choisit une direction au hasard parmi les 4 possibles (Haut, Bas, Gauche, Droite)
+        // Math.random() donne un nombre entre 0 et 1, multiplié par 4 et arrondi à l'entier inférieur
+        const newDirection = directions[Math.floor(Math.random() * 4)];
+        // On applique cette nouvelle direction au fantôme pour qu'il change de trajectoire
+        ghost.updateDirection(newDirection);
+    }
+
+    // Démarre la boucle principale du jeu
+    update();
+    // Ajoute un écouteur d'événements pour capturer les touches du clavier
+    this.document.addEventListener("keyup", movePacman);
+
+  
+}
 
 
 // --- CHARGEMENT DES RESSOURCES (ASSETS) ---
@@ -213,6 +226,33 @@ function move() {
     // On additionne la vitesse verticale à la position actuelle Y.
     // Si velocityY est positif, Pac-Man descend. S'il est négatif, il monte.
     pacman.y += pacman.velocityY;
+
+    for (let wall of walls.values()) {
+        if (collision(pacman, wall)) {
+            // Collision détectée : on annule le mouvement en inversant la vitesse
+            pacman.x -= pacman.velocityX;
+            pacman.y -= pacman.velocityY;
+            break; // Sort de la boucle dès qu'une collision est trouvée
+        }
+    }
+    for (let ghost of ghosts.values()) {
+        if (ghost.y == tileSize * 9 && ghost.direction != 'U' && ghost.direction != 'D') {
+            ghost.updateDirection('U')
+        }
+
+        ghost.x += ghost.velocityX;
+        ghost.y += ghost.velocityY;
+        for (let wall of walls.values()) {
+            if (collision(ghost, wall) || ghost.x <= 0 || ghost.x + ghost.width >= boardWidth) {
+                // Collision détectée : on annule le mouvement en inversant la vitesse
+                ghost.x -= ghost.velocityX;
+                ghost.y -= ghost.velocityY;
+                // Choisit une nouvelle direction aléatoire pour le fantôme
+                const newDirection = directions[Math.floor(Math.random() * 4)];
+                ghost.updateDirection(newDirection);
+            }
+        }
+    }
 }
 /**
  * Intercepte les pressions de touches au clavier pour diriger Pac-Man.
@@ -236,7 +276,20 @@ function movePacman(event) {
     else if (event.code === "ArrowRight" || event.code === "KeyD") {
         pacman.updateDirection('R');    // Oriente Pac-Man vers la DROITE
     }
-
+    // --- MISE À JOUR VISUELLE : On change l'image selon la direction choisie ---
+        // Si la direction est vers le HAUT, on assigne l'image de Pac-Man qui regarde en haut
+    if (pacman.direction == 'U') {
+        pacman.image = pacmanupImage;
+        // Si la direction est vers le BAS, on assigne l'image correspondante
+    }  else if (pacman.direction == 'D') { 
+        pacman.image = pacmandownImage;
+        // Si la direction est vers la GAUCHE, on change l'image pour le profil gauche
+    }  else if (pacman.direction == 'L') {
+        pacman.image = pacmanleftImage;
+        // Si la direction est vers la DROITE, on utilise l'image du profil droit
+    }  else if (pacman.direction == 'R') {
+        pacman.image = pacmanrightImage;
+    }
 }
 /** 
 * Vérifie s'il y a une collision entre deux objets (AABB - Axis-Aligned Bounding Box)
@@ -283,8 +336,23 @@ class Block {
      * @param {string} direction - Nouvelle direction ('U', 'D', 'L', 'R').
      */
     updateDirection(direction) {
+        const prevDirection = this.direction; // Mémorise l'ancienne direction
         this.direction = direction;     // Enregistre la nouvelle direction choisie
         this.updateVelocity();          // Met à jour les vecteurs de mouvement X et Y
+        this.x += this.velocityX; // Applique immédiatement le mouvement horizontal
+        this.y += this.velocityY; // Applique immédiatement le mouvement vertical
+
+        for (let wall of walls.values()) {
+            if (collision(this, wall)) {
+                // Collision détectée : on annule le mouvement en inversant la vitesse
+                this.x -= this.velocityX;
+                this.y -= this.velocityY;
+                this.direction = prevDirection; // Restaure l'ancienne direction
+                this.updateVelocity();          // Restaure l'ancienne vitesse
+                return; // Sort de la boucle dès qu'une collision est trouvée
+            }
+        }
+
     }
     /**
      * Traduit la direction textuelle en valeurs numériques de vitesse (Velocity).

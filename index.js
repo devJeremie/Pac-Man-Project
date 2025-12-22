@@ -59,6 +59,9 @@ const ghosts = new Set();
 let pacman;
 
 const directions = ['U', 'D', 'L', 'R']; // Up, Down, Left, Right]
+let score = 0;
+let lives = 3;
+let gameOver = false;
 
 // --- INITIALISATION DU JEU ---
 // Cette fonction s'exécute automatiquement quand la page Web a fini de charger
@@ -235,24 +238,42 @@ function move() {
             break; // Sort de la boucle dès qu'une collision est trouvée
         }
     }
+    // On parcourt chaque fantôme pour calculer son prochain mouvement
     for (let ghost of ghosts.values()) {
+        // CONDITION SPÉCIALE : Si le fantôme est dans la zone de départ (la "maison" des fantômes)
+        // On vérifie s'il est à la ligne 9 et s'il ne monte ou ne descend pas déjà
         if (ghost.y == tileSize * 9 && ghost.direction != 'U' && ghost.direction != 'D') {
+            // On le force à monter ('U') pour qu'il sorte de la zone de départ
             ghost.updateDirection('U')
         }
-
+        // On applique le déplacement physique du fantôme selon sa vitesse actuelle
         ghost.x += ghost.velocityX;
         ghost.y += ghost.velocityY;
+        // --- GESTION DES COLLISIONS DU FANTÔME ---
         for (let wall of walls.values()) {
+            // On vérifie si le fantôme touche un mur OU s'il dépasse les bords du plateau (gauche/droite)
             if (collision(ghost, wall) || ghost.x <= 0 || ghost.x + ghost.width >= boardWidth) {
                 // Collision détectée : on annule le mouvement en inversant la vitesse
                 ghost.x -= ghost.velocityX;
                 ghost.y -= ghost.velocityY;
-                // Choisit une nouvelle direction aléatoire pour le fantôme
+                // IA : Puisqu'il est bloqué, on lui choisit une nouvelle direction au hasard
+                // 'directions' doit être un tableau contenant ['U', 'D', 'L', 'R']
                 const newDirection = directions[Math.floor(Math.random() * 4)];
                 ghost.updateDirection(newDirection);
             }
         }
     }
+
+    let foodEaten = null;
+    for (let food of foods.values()) {
+        if (collision(pacman, food)) {  
+            foodEaten = food; // Mémorise la nourriture à supprimer après la boucle
+            score += 10; // Incrémente le score de 10 points
+            break; // Sort de la boucle dès qu'une pastille est mangée
+        }
+    }
+    // Supprime la pastille mangée de l'ensemble des nourritures
+        foods.delete(foodEaten); 
 }
 /**
  * Intercepte les pressions de touches au clavier pour diriger Pac-Man.

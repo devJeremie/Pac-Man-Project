@@ -4,6 +4,9 @@ const rowCount = 21;    // Nombre de lignes dans le labyrinthe
 const colCount = 19;    // Nombre de colonnes dans le labyrinthe
 const tileSize = 32;    // Taille de chaque case (tuile) en pixels
 
+let cherries = new Set();
+let poweredUp = false;
+let powerTimer = 0;
 // Calcul automatique de la largeur et hauteur totale du canvas
 const boardWidth = colCount * tileSize;
 const boardHeight = rowCount * tileSize;
@@ -16,7 +19,8 @@ let orangeGhostImage;
 let pinkGhostImage;
 let redGhostImage;
 //Images et gestion Cerise et fatomes Peureux
-let cherries = new Set();
+let cherryImage;
+let scaredGhostImage;
 // Images de Pac-Man (une pour chaque direction)
 let pacmanupImage;
 let pacmandownImage;
@@ -125,6 +129,11 @@ function loadImages() {
     pacmanleftImage.src = "./image/pacmanLeft.png";
     pacmanrightImage = new Image();
     pacmanrightImage.src = "./image/pacmanRight.png";
+    //Chargement des images cerise et fantomes peureux
+    cherryImage = new Image();
+    cherryImage.src = "./image/cherry.png";
+    scaredGhostImage = new Image();
+    scaredGhostImage.src = "./image/scaredGhost.png";
 }
 
 function loadMap(){
@@ -179,6 +188,11 @@ function loadMap(){
                 const food = new Block(null, x + 14, y + 14, 4, 4);
                 foods.add(food);
             }
+            else if (tileMapChar === 'C') {
+                // Créer une cerise et l'ajouter à l'ensemble des cerises
+                const cherry = new Block(cherryImage, x + 8, y + 8, 16, 16);
+                cherries.add(cherry);
+            }
         }
     }
 }
@@ -208,7 +222,13 @@ function draw() {
     // 2. DESSINER LES FANTÔMES
     // On parcourt l'ensemble 'ghosts' pour afficher chaque fantôme
     for (let ghost of ghosts) {
-        context.drawImage(ghost.image, ghost.x, ghost.y, ghost.width, ghost.height);
+        if (!ghost.eaten) { // Si le fantôme est mangé, on ne l'affiche pas
+            if (poweredUp) {
+                context.drawImage(scaredGhostImage, ghost.x, ghost.y, ghost.width, ghost.height);
+            } else {
+                context.drawImage(ghost.image, ghost.x, ghost.y, ghost.width, ghost.height);
+            }
+        }
     }
     // 3. DESSINER LES MURS
     // On parcourt l'ensemble 'walls' pour construire la structure du labyrinthe
@@ -221,6 +241,9 @@ function draw() {
     for (let food of foods) {
         // Comme les pastilles n'ont pas d'image, on dessine des petits rectangles pleins
         context.fillRect(food.x, food.y, food.width, food.height);
+    } //on affihce les cerises à l'écran
+    for (let cherry of cherries) {
+        context.drawImage(cherry.image, cherry.x, cherry.y, cherry.width, cherry.height);
     }
     // 5. AFFICHAGE DU SCORE ET DE L'ÉTAT DU JEU 
     // On définit la couleur du texte en blanc
@@ -265,6 +288,13 @@ function move() {
     for (let ghost of ghosts.values()) {
         // On vérifie si Pac-Man entre en contact avec le fantôme actuel
         if (collision(pacman, ghost)) {
+            if (poweredUp) {
+                // Si Pac-Man est en mode "puissant", le fantôme est mangé
+                score += 200; // Incrémente le score de 200 points
+                ghost.eaten = true; // Marque le fantôme comme "mangé"
+                ghost.eatenTimer = 120; // Le fantôme disparaît pendant 120 frames (6 secondes à 20fps)
+                ghost.reset(); // Remet le fantôme à sa position de départ
+            } else {
             // En cas de contact, on réduit le compteur de vies du joueur de 1
             lives -= 1; // Perte d'une vie
             if (lives == 0) {
@@ -275,6 +305,8 @@ function move() {
             // Appel d'une fonction pour remettre tout le monde à sa place de départ
             // Cela évite que Pac-Man ne perde toutes ses vies d'un coup en restant sur le fantôme
             resetPositions();
+            }
+        break; // Sort de la boucle dès qu'une collision est trouvée
         }
 
         // CONDITION SPÉCIALE : Si le fantôme est dans la zone de départ (la "maison" des fantômes)
@@ -315,6 +347,42 @@ function move() {
     if (foods.size === 0) {
         loadMap(); // Recharge la carte si toutes les pastilles ont été mangées
         resetPositions(); // Remet les personnages à leur position initiale
+    }
+    let cherryEaten = null;
+    for (let cherry of cherries.values()) {
+        if (collision(pacman, cherry)) {    
+            cherryEaten = cherry; // Mémorise la cerise à supprimer après la boucle
+            score += 50; // Incrémente le score de 50 points
+            poweredUp = true; // Active le mode "puissant"
+            powerTimer = 300; // Durée du mode "puissant" en frames (300 frames = 15 secondes à 20fps)
+            break; // Sort de la boucle dès qu'une cerise est mangée
+        }
+    }
+    // Supprime la cerise mangée de l'ensemble des cerises
+        cherries.delete(cherryEaten);
+    // GESTION DU MODE "PUISSANT"
+    // Vérifie si le bonus ou l'état "puissant" est actuellement actif
+    if (poweredUp) {
+        // Réduit le temps restant à chaque itération (généralement par frame ou par seconde)
+        powerTimer--;
+        // Vérifie si le compte à rebours est arrivé à son terme
+        if (powerTimer <= 0) {
+            // Désactive l'état "puissant" car le temps imparti est écoulé
+            poweredUp = false; 
+        }
+    }
+    // Parcourt l'ensemble des fantômes présents dans la collection
+    for (let ghost of ghosts.values()) {
+        // Vérifie si le fantôme est actuellement dans l'état "mangé"
+        if (ghost.eaten) {
+            // Décrémente son compteur de temps de régénération
+            ghost.eatenTimer--;
+            // Si le compte à rebours atteint zéro ou moins
+            if (ghost.eatenTimer <= 0) {
+                // Réinitialise l'état : le fantôme n'est plus "mangé" et revient en jeu
+                ghost.eaten = false; 
+            }
+        }
     }
 }
 /**
@@ -429,7 +497,10 @@ class Block {
         this.velocityX = 0; 
         // Détermine la vitesse et la direction sur l'axe vertical (Y).
         // Une valeur positive déplace vers le bas, négative vers le haut.
-        this.velocityY = 0; 
+        this.velocityY = 0;
+
+        this.eaten = false; // Indique si la pastille ou cerise a été mangée (utile pour la nourriture)
+        this.eatenTimer = 0; // Compteur pour gérer le délai après avoir été mangé 
     }
 
     /**

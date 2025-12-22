@@ -330,36 +330,42 @@ function movePacman(event) {
         update(); // Redémarre la boucle de mise à jour
         return; // Quitte la fonction pour ne pas traiter d'autres entrées
     }
-    // Vérifie si la touche pressée est 'Flèche Haut' ou la touche 'W' (Haut en mode WASD)
+    // --- GESTION DES TOUCHES DIRECTIONNELLES ---
+    // Cas : Vers le HAUT (Flèche Haut ou Touche W)
     if (event.code === "ArrowUp" || event.code === "KeyW") {
-        pacman.updateDirection('U');    // Oriente Pac-Man vers le HAUT
+        pacman.direction = 'U';     // Définit la nouvelle intention de direction
+        pacman.updateVelocity();// Calcule la nouvelle vitesse (X=0, Y négatif)
+        // Aligne Pac-Man sur la grille pour qu'il entre parfaitement dans le couloir vertical/horizontal
+        pacman.x = Math.round(pacman.x / tileSize) * tileSize;
+        pacman.y = Math.round(pacman.y / tileSize) * tileSize;
     }
-    // Vérifie si la touche pressée est 'Flèche Bas' ou la touche 'S' (Bas)
+    // Cas : Vers le BAS (Flèche Bas ou Touche S)
     else if (event.code === "ArrowDown" || event.code === "KeyS") {
-        pacman.updateDirection('D');    // Oriente Pac-Man vers le BAS
-    }
-    // Vérifie si la touche pressée est 'Flèche Gauche' ou la touche 'A' (Gauche)
+        pacman.direction = 'D';
+        pacman.updateVelocity();
+        pacman.x = Math.round(pacman.x / tileSize) * tileSize;
+        pacman.y = Math.round(pacman.y / tileSize) * tileSize;
+    } 
+    // Cas : Vers la GAUCHE (Flèche Gauche ou Touche A)
     else if (event.code === "ArrowLeft" || event.code === "KeyA") {
-        pacman.updateDirection('L');    // Oriente Pac-Man vers la GAUCHE
+        pacman.direction = 'L';
+        pacman.updateVelocity();
+        pacman.x = Math.round(pacman.x / tileSize) * tileSize;
+        pacman.y = Math.round(pacman.y / tileSize) * tileSize;
     }
-    // Vérifie si la touche pressée est 'Flèche Droite' ou la touche 'D' (Droite)
+    // Cas : Vers la DROITE (Flèche Droite ou Touche D)
     else if (event.code === "ArrowRight" || event.code === "KeyD") {
-        pacman.updateDirection('R');    // Oriente Pac-Man vers la DROITE
+        pacman.direction = 'R';
+        pacman.updateVelocity();
+        pacman.x = Math.round(pacman.x / tileSize) * tileSize;
+        pacman.y = Math.round(pacman.y / tileSize) * tileSize;
     }
     // --- MISE À JOUR VISUELLE : On change l'image selon la direction choisie ---
         // Si la direction est vers le HAUT, on assigne l'image de Pac-Man qui regarde en haut
-    if (pacman.direction == 'U') {
-        pacman.image = pacmanupImage;
-        // Si la direction est vers le BAS, on assigne l'image correspondante
-    }  else if (pacman.direction == 'D') { 
-        pacman.image = pacmandownImage;
-        // Si la direction est vers la GAUCHE, on change l'image pour le profil gauche
-    }  else if (pacman.direction == 'L') {
-        pacman.image = pacmanleftImage;
-        // Si la direction est vers la DROITE, on utilise l'image du profil droit
-    }  else if (pacman.direction == 'R') {
-        pacman.image = pacmanrightImage;
-    }
+    if (pacman.direction == 'U') pacman.image = pacmanupImage;          // Image Pac-Man vers le haut
+    else if (pacman.direction == 'D') pacman.image = pacmandownImage;   // Image Pac-Man vers le bas
+    else if (pacman.direction == 'L') pacman.image = pacmanleftImage;   // Image Pac-Man vers la gauche
+    else if (pacman.direction == 'R') pacman.image = pacmanrightImage;  // Image Pac-Man vers la droite
 }
 /** 
 * Vérifie s'il y a une collision entre deux objets (AABB - Axis-Aligned Bounding Box)

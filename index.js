@@ -182,6 +182,9 @@ function loadMap(){
 }
 
 function update() {
+    if (gameOver) {
+        return; // Arrête la mise à jour si le jeu est terminé
+    }
     move();
     draw();
     setTimeout(update, 50); //20fps 1 -> 1000/20 = 50ms
@@ -217,6 +220,24 @@ function draw() {
         // Comme les pastilles n'ont pas d'image, on dessine des petits rectangles pleins
         context.fillRect(food.x, food.y, food.width, food.height);
     }
+    // 5. AFFICHAGE DU SCORE ET DE L'ÉTAT DU JEU 
+    // On définit la couleur du texte en blanc
+    context.fillStyle = "white ";
+    // On définit la taille et la police d'écriture (20 pixels, police Arial)
+    context.font = "20px Arial";
+    // On vérifie si la variable 'gameOver' est vraie
+    if (gameOver) {
+        // Si le jeu est fini, on affiche le message "Game Over" suivi du score final
+        // (tileSize / 2) définit la position X et Y pour l'affichage en haut à gauche
+        context.fillText("Game Over: " + String(score), tileSize / 2, tileSize / 2);
+        // On quitte la fonction draw prématurément pour ne plus rien dessiner d'autre
+        return; // Arrête le dessin si le jeu est terminé
+    } else {
+        // Si le jeu est toujours en cours, on affiche le nombre de vies restantes et le score actuel
+        // Format : "X3 1500" (par exemple)
+        context.fillText('X' + String(lives) + " " + String(score), tileSize / 2, tileSize / 2);
+    }
+    
 }
 /**
  * Calcule et applique le déplacement de Pac-Man à chaque image (frame).
@@ -238,8 +259,22 @@ function move() {
             break; // Sort de la boucle dès qu'une collision est trouvée
         }
     }
-    // On parcourt chaque fantôme pour calculer son prochain mouvement
+    // On parcourt la liste de tous les fantômes présents sur le plateau
     for (let ghost of ghosts.values()) {
+        // On vérifie si Pac-Man entre en contact avec le fantôme actuel
+        if (collision(pacman, ghost)) {
+            // En cas de contact, on réduit le compteur de vies du joueur de 1
+            lives -= 1; // Perte d'une vie
+            if (lives == 0) {
+                // Si le joueur n'a plus de vies, on active le mode "Game Over"
+                gameOver = true;
+                return; // On quitte la fonction pour arrêter tout traitement supplémentaire
+            }
+            // Appel d'une fonction pour remettre tout le monde à sa place de départ
+            // Cela évite que Pac-Man ne perde toutes ses vies d'un coup en restant sur le fantôme
+            resetPositions();
+        }
+
         // CONDITION SPÉCIALE : Si le fantôme est dans la zone de départ (la "maison" des fantômes)
         // On vérifie s'il est à la ligne 9 et s'il ne monte ou ne descend pas déjà
         if (ghost.y == tileSize * 9 && ghost.direction != 'U' && ghost.direction != 'D') {
@@ -274,6 +309,11 @@ function move() {
     }
     // Supprime la pastille mangée de l'ensemble des nourritures
         foods.delete(foodEaten); 
+    
+    if (foods.size === 0) {
+        loadMap(); // Recharge la carte si toutes les pastilles ont été mangées
+        resetPositions(); // Remet les personnages à leur position initiale
+    }
 }
 /**
  * Intercepte les pressions de touches au clavier pour diriger Pac-Man.
@@ -281,6 +321,15 @@ function move() {
  * @param {KeyboardEvent} event - L'événement clavier envoyé par le navigateur.
  */
 function movePacman(event) {
+    if (gameOver) {
+        loadMap; // Recharge la carte si le jeu est terminé
+        resetPositions(); // Remet les personnages à leur position initiale
+        score = 0;
+        lives = 3;
+        gameOver = false;
+        update(); // Redémarre la boucle de mise à jour
+        return; // Quitte la fonction pour ne pas traiter d'autres entrées
+    }
     // Vérifie si la touche pressée est 'Flèche Haut' ou la touche 'W' (Haut en mode WASD)
     if (event.code === "ArrowUp" || event.code === "KeyW") {
         pacman.updateDirection('U');    // Oriente Pac-Man vers le HAUT
@@ -325,6 +374,29 @@ function collision(a, b){
            a.y + a.height > b.y;    // Vérifie si le bord bas de 'a' est plus bas que le bord haut de 'b'
 }
 
+
+/**
+ * Remet tous les personnages (Pac-Man et Fantômes) à leurs positions initiales.
+ * Appelée généralement après la perte d'une vie.
+ */
+function resetPositions() {
+    // 1. RÉINITIALISATION DE PAC-MAN
+    // On utilise la méthode reset() pour le replacer à ses coordonnées de départ (startX, startY)
+    pacman.reset();
+    // On immobilise Pac-Man au redémarrage pour éviter qu'il ne fonce tout de suite dans un mur
+    pacman.velocityX = 0;
+    pacman.velocityY = 0;
+    // 2. RÉINITIALISATION DES FANTÔMES
+    // On parcourt chaque fantôme stocké dans l'ensemble 'ghosts'
+    for (let ghost of ghosts.values()) {
+        // On replace le fantôme à sa position d'origine (dans ou devant la "cage")
+        ghost.reset();
+        // On lui choisit une nouvelle direction de départ au hasard pour varier le jeu
+        const newDirection = directions[Math.floor(Math.random() * 4)];
+        // On applique cette direction pour qu'il commence à bouger immédiatement
+        ghost.updateDirection(newDirection);
+    }
+}
 /**
  * Classe représentant un élément graphique du jeu (Mur, Pac-Man ou Fantôme).
  * Elle permet de regrouper toutes les propriétés d'un objet au même endroit.
@@ -397,5 +469,15 @@ class Block {
             //donc l'axe Y est orienté vers le bas positif donc le haut negatif
             //et donc pour aller a droite c'est positif et a gauche c'est negatif 
         }
+    }
+    /**
+     * Réinitialise la position de l'objet à ses coordonnées d'origine.
+     * Utile lorsqu'une vie est perdue ou que le niveau recommence.
+     */
+    reset() {
+        // Redonne à la position X actuelle la valeur qu'elle avait au tout début du jeu
+        this.x = this.startX;
+        // Redonne à la position Y actuelle la valeur qu'elle avait au tout début du jeu
+        this.y = this.startY;
     }
 }

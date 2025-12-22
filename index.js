@@ -33,7 +33,7 @@ let wallImage;
 //Ghosts: b = blue, o = orange, p = pink, r = red
 const tileMap = [
     "XXXXXXXXXXXXXXXXXXX",
-    "XC       X       CX",
+    "XC       X        X",
     "X XX XXX X XXX XX X",
     "X                 X",
     "X XX X XXXXX X XX X",
@@ -51,7 +51,7 @@ const tileMap = [
     "XX X X XXXXX X X XX",
     "X    X   X   X    X",
     "X XXXXXX X XXXXXX X",
-    "XC               CX",
+    "X                CX",
     "XXXXXXXXXXXXXXXXXXX"
 ];
 // --- STOCKAGE DES OBJETS DU JEU ---

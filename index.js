@@ -15,6 +15,8 @@ let blueGhostImage;
 let orangeGhostImage;
 let pinkGhostImage;
 let redGhostImage;
+//Images et gestion Cerise et fatomes Peureux
+let cherries = new Set();
 // Images de Pac-Man (une pour chaque direction)
 let pacmanupImage;
 let pacmandownImage;
@@ -27,7 +29,7 @@ let wallImage;
 //Ghosts: b = blue, o = orange, p = pink, r = red
 const tileMap = [
     "XXXXXXXXXXXXXXXXXXX",
-    "X        X        X",
+    "XC       X       CX",
     "X XX XXX X XXX XX X",
     "X                 X",
     "X XX X XXXXX X XX X",
@@ -45,7 +47,7 @@ const tileMap = [
     "XX X X XXXXX X X XX",
     "X    X   X   X    X",
     "X XXXXXX X XXXXXX X",
-    "X                 X",
+    "XC               CX",
     "XXXXXXXXXXXXXXXXXXX"
 ];
 // --- STOCKAGE DES OBJETS DU JEU ---

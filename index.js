@@ -166,6 +166,7 @@ function loadMap(){
 }
 
 function update() {
+    move();
     draw();
     setTimeout(update, 50); //20fps 1 -> 1000/20 = 50ms
     //setInterval, setTimeout,
@@ -176,6 +177,10 @@ function update() {
  * Elle est appelée à chaque itération de la boucle update pour redessiner l'écran.
  */
 function draw() {
+    // Efface l'intégralité du contenu du Canvas.
+    // (0, 0) : Coordonnées du coin supérieur gauche.
+    // board.width, board.height : Coordonnées du coin inférieur droit (toute la surface).
+    context.clearRect(0, 0, board.width, board.height); 
     // 1. DESSINER PAC-MAN
     // On dessine l'image actuelle de Pac-Man à ses coordonnées (x, y)
     context.drawImage(pacman.image, pacman.x, pacman.y, pacman.width, pacman.height);
@@ -196,6 +201,18 @@ function draw() {
         // Comme les pastilles n'ont pas d'image, on dessine des petits rectangles pleins
         context.fillRect(food.x, food.y, food.width, food.height);
     }
+}
+/**
+ * Calcule et applique le déplacement de Pac-Man à chaque image (frame).
+ * Cette fonction transforme la vitesse (Velocity) en changement de position réelle.
+ */
+function move() {
+    // On additionne la vitesse horizontale à la position actuelle X.
+    // Si velocityX est positif, Pac-Man va à droite. S'il est négatif, il va à gauche.
+    pacman.x += pacman.velocityX;
+    // On additionne la vitesse verticale à la position actuelle Y.
+    // Si velocityY est positif, Pac-Man descend. S'il est négatif, il monte.
+    pacman.y += pacman.velocityY;
 }
 /**
  * Intercepte les pressions de touches au clavier pour diriger Pac-Man.
@@ -220,6 +237,18 @@ function movePacman(event) {
         pacman.updateDirection('R');    // Oriente Pac-Man vers la DROITE
     }
 
+}
+/** 
+* Vérifie s'il y a une collision entre deux objets (AABB - Axis-Aligned Bounding Box)
+* @param { Object } a - Le premier objet(ex: Pacman)
+* @param { Object } b - Le deuxième objet(ex: un Fantôme ou une Pac - gomme)
+* @returns { boolean } - Retourne vrai si les objets se touchent, sinon faux
+*/
+function collision(a, b){
+    return a.x < b.x + b.width &&   // Vérifie si le bord gauche de 'a' est plus à gauche que le bord droit de 'b'
+           a.x + a.width > b.x &&   // Vérifie si le bord droit de 'a' est plus à droite que le bord gauche de 'b'
+           a.y < b.y + b.height &&  // Vérifie si le bord haut de 'a' est plus haut que le bord bas de 'b'
+           a.y + a.height > b.y;    // Vérifie si le bord bas de 'a' est plus bas que le bord haut de 'b'
 }
 
 /**

@@ -31,29 +31,57 @@ let wallImage;
 
 //X = wall, O = skip, P = pac man, ' ' = food
 //Ghosts: b = blue, o = orange, p = pink, r = red
-const tileMap = [
-    "XXXXXXXXXXXXXXXXXXX",
-    "XC       X        X",
-    "X XX XXX X XXX XX X",
-    "X                 X",
-    "X XX X XXXXX X XX X",
-    "X    X       X    X",
-    "XXXX XXXX XXXX XXXX",
-    "OOOX X       X XOOO",
-    "XXXX X XXrXX X XXXX",
-    "O       bpo       O",
-    "XXXX X XXXXX X XXXX",
-    "OOOX X       X XOOO",
-    "XXXX X XXXXX X XXXX",
-    "X        X        X",
-    "X XX XXX X XXX XX X",
-    "X  X     P     X  X",
-    "XX X X XXXXX X X XX",
-    "X    X   X   X    X",
-    "X XXXXXX X XXXXXX X",
-    "X                CX",
-    "XXXXXXXXXXXXXXXXXXX"
+const levels = [
+    //Niveau 1
+    [
+        "XXXXXXXXXXXXXXXXXXX",
+        "XC       X        X",
+        "X XX XXX X XXX XX X",
+        "X                 X",
+        "X XX X XXXXX X XX X",
+        "X    X       X    X",
+        "XXXX XXXX XXXX XXXX",
+        "OOOX X       X XOOO",
+        "XXXX X XXrXX X XXXX",
+        "O       bpo       O",
+        "XXXX X XXXXX X XXXX",
+        "OOOX X       X XOOO",
+        "XXXX X XXXXX X XXXX",
+        "X        X        X",
+        "X XX XXX X XXX XX X",
+        "X  X     P     X  X",
+        "XX X X XXXXX X X XX",
+        "X    X   X   X    X",
+        "X XXXXXX X XXXXXX X",
+        "X                CX",
+        "XXXXXXXXXXXXXXXXXXX",
+    ],
+    //Niveau 2 
+    [
+        "XXXXXXXXXXXXXXXXXXX", // 1
+        "X C      X      C X", // 2  (C = Pastilles bonus aux coins)
+        "X XX XXX X XXX XX X", // 3
+        "X OO     X     OO X", // 4
+        "X XX XXXX XXXX XX X", // 5
+        "X    X       X    X", // 6  
+        "XXXX X XXXXX X XXXX", // 7
+        "X      X   X      X", // 8  
+        "X XXXX X X X XXXX X", // 9
+        "X X      r      X X", // 10 (Porte 'r' pour sortir)
+        "X X XXX bpo XXX X X", // 11 (Zone fantômes)
+        "X X XXXXXXXXX X X X", // 12
+        "X X           X X X", // 13
+        "X XXXX XX XX XXXX X", // 14 
+        "X      X   X      X", // 15
+        "XXXX X X   X X XXXX", // 16 
+        "X    X XX XX X    X", // 17
+        "X XX           XX X", // 18
+        "X OO    P      OO X", // 19 (P = Départ Pac-Man)
+        "XC        X      CX", // 20
+        "XXXXXXXXXXXXXXXXXXX"  // 21
+    ]
 ];
+let currentLevel = 0; // Indice du niveau actuel (0 = premier niveau)
 // --- STOCKAGE DES OBJETS DU JEU ---
 // Utilisation de Set() pour stocker les murs (plus performant qu'un tableau pour les recherches)
 const walls = new Set();
@@ -68,6 +96,7 @@ const directions = ['U', 'D', 'L', 'R']; // Up, Down, Left, Right]
 let score = 0;
 let lives = 3;
 let gameOver = false;
+
 
 // --- INITIALISATION DU JEU ---
 // Cette fonction s'exécute automatiquement quand la page Web a fini de charger
@@ -100,7 +129,7 @@ window.onload = function() {
     // Démarre la boucle principale du jeu
     update();
     // Ajoute un écouteur d'événements pour capturer les touches du clavier
-    this.document.addEventListener("keyup", movePacman);
+   document.addEventListener("keyup", movePacman);
 
   
 }
@@ -142,12 +171,16 @@ function loadMap(){
     walls.clear();
     foods.clear();
     ghosts.clear();
+    cherries.clear();
+
+    const currentTileMap = levels[currentLevel];
     // 2. PARCOURS DE LA GRILLE : On utilise une double boucle (Lignes/Colonnes)
     // pour lire chaque case de la matrice 'tileMap'.
     for (let r = 0; r < rowCount; r++) {
         for (let c = 0; c < colCount; c++) {
             // Récupère le caractère à la position actuelle (ex: '1', '0', 'P')
-            const row = tileMap[r];
+            // const row = tileMap[r];
+            const row = currentTileMap[r];
             const tileMapChar = row[c];
             // 3. CONVERSION EN COORDONNÉES PIXELS :
             // On transforme l'index (ligne/colonne) en position réelle sur l'écran.
@@ -261,6 +294,7 @@ function draw() {
         // Si le jeu est toujours en cours, on affiche le nombre de vies restantes et le score actuel
         // Format : "X3 1500" (par exemple)
         context.fillText('X' + String(lives) + " " + String(score), tileSize / 2, tileSize / 2);
+        context.fillText("Niv: " + (currentLevel + 1), boardWidth - 80, tileSize / 2);  
     }
     
 }
@@ -341,13 +375,15 @@ function move() {
             break; // Sort de la boucle dès qu'une pastille est mangée
         }
     }
+    if (foodEaten) {
     // Supprime la pastille mangée de l'ensemble des nourritures
         foods.delete(foodEaten); 
-    
-    if (foods.size === 0) {
-        loadMap(); // Recharge la carte si toutes les pastilles ont été mangées
-        resetPositions(); // Remet les personnages à leur position initiale
     }
+    // if (foods.size === 0) {
+    //     loadMap(); // Recharge la carte si toutes les pastilles ont été mangées
+    //     resetPositions(); // Remet les personnages à leur position initiale
+    // }
+
     let cherryEaten = null;
     for (let cherry of cherries.values()) {
         if (collision(pacman, cherry)) {    
@@ -357,9 +393,24 @@ function move() {
             powerTimer = 300; // Durée du mode "puissant" en frames (300 frames = 15 secondes à 20fps)
             break; // Sort de la boucle dès qu'une cerise est mangée
         }
-    }
+    }if (cherryEaten) {
     // Supprime la cerise mangée de l'ensemble des cerises
         cherries.delete(cherryEaten);
+    }
+    if (foods.size === 0 && cherries.size === 0) {  // ← Attend TOUS les éléments
+        currentLevel++;  // ← Passe au niveau suivant
+
+        if (currentLevel >= levels.length) {
+            // TOUS LES NIVEAUX FINIS !
+            gameOver = true;
+            score += 1000;  // Bonus victoire totale
+        } else {
+            loadMap();       // Charge NOUVEAU niveau
+            resetPositions(); // Remet positions
+            poweredUp = false; // Reset power-up
+        }
+        return; // Quitte la fonction pour ne pas exécuter le reste
+    }
     // GESTION DU MODE "PUISSANT"
     // Vérifie si le bonus ou l'état "puissant" est actuellement actif
     if (poweredUp) {
@@ -392,7 +443,7 @@ function move() {
  */
 function movePacman(event) {
     if (gameOver) {
-        loadMap; // Recharge la carte si le jeu est terminé
+        loadMap(); // Recharge la carte si le jeu est terminé
         resetPositions(); // Remet les personnages à leur position initiale
         score = 0;
         lives = 3;
